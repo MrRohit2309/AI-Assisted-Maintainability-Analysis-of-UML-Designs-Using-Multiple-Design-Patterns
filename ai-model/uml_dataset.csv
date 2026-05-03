@@ -1,0 +1,8 @@
+classes,relations,inheritance,dependencies,methods,attributes,coupling,cohesion,modularity,extensibility,complexity
+10,15,2,7,4,3,6,7,6,7,5
+12,18,3,9,4,3,7,6,6,6,6
+8,10,1,5,3,2,5,8,7,8,4
+15,20,4,10,5,4,7,6,5,6,7
+11,14,2,6,3,3,6,7,6,7,5
+9,12,1,5,3,2,5,8,7,8,4
+13,17,3,8,4,3,6,7,6,7,6

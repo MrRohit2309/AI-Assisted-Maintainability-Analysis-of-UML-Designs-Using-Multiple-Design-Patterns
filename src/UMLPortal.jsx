@@ -4,7 +4,7 @@ import {
   PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate, useInView } from "framer-motion";
 
 
 
@@ -39,13 +39,16 @@ const GLOBAL_CSS = `
     --shadow-glow: 0 0 0 2px rgba(59,130,246,0.2);
   }
 
-  body { 
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
-    background: var(--gray50); 
-    color: var(--gray800); 
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+ body { 
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  background:
+    radial-gradient(circle at 20% 10%, rgba(236,72,153,0.05), transparent 40%),
+    radial-gradient(circle at 80% 90%, rgba(59,130,246,0.05), transparent 40%),
+    #fdfdfd;
+
+  color: var(--gray800);
+}
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -707,6 +710,77 @@ transition:all .25s ease;
 transform:translateY(-4px);
 box-shadow:0 12px 30px rgba(0,0,0,0.12);
 }
+
+.glass-card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.7); /* dark glass */
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-600px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes floatAdvanced {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: translateY(-300px) translateX(20px) scale(1.2);
+  }
+
+  100% {
+    transform: translateY(-700px) translateX(-20px) scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes floatGlobal {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: translateY(-100vh);
+    opacity: 0;
+  }
+}
+
+
 `;
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -2280,9 +2354,146 @@ return (
 };
 
 
+// ─── ADVANCED PARTICLES (NEXT LEVEL) ─────────────────
+
+const Particles = () => {
+
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+
+    const handleMouseMove = (e) => {
+
+      const { clientX, clientY } = e;
+
+      const particles = containerRef.current?.children;
+
+      if (!particles) return;
+
+      for (let i = 0; i < particles.length; i++) {
+
+        const speed = particles[i].dataset.speed || 0.02;
+
+        const x = (window.innerWidth - clientX * speed) / 100;
+        const y = (window.innerHeight - clientY * speed) / 100;
+
+        particles[i].style.transform =
+          `translate(${x}px, ${y}px)`;
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+
+  }, []);
+
+  const particles = Array.from({ length: 35 });
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+        zIndex: 0,
+        pointerEvents: "none"
+      }}
+    >
+      {particles.map((_, i) => {
+
+        const size = Math.random() * 6 + 2;
+        const left = Math.random() * 100;
+        const duration = Math.random() * 15 + 15;
+        const delay = Math.random() * 10;
+        const speed = Math.random() * 0.05 + 0.01;
+
+        const colors = [
+          "rgba(96,165,250,0.5)",   // blue
+          "rgba(34,197,94,0.4)",    // green
+          "rgba(255,255,255,0.3)"   // white
+        ];
+
+        const color = colors[i % colors.length];
+
+        return (
+          <div
+            key={i}
+            data-speed={speed}
+            style={{
+              position: "absolute",
+              bottom: -20,
+              left: `${left}%`,
+              width: size,
+              height: size,
+              borderRadius: "50%",
+              background: color,
+              boxShadow: `0 0 10px ${color}`,
+              animation: `floatAdvanced ${duration}s linear infinite`,
+              animationDelay: `${delay}s`
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── GLOBAL BACKGROUND PARTICLES ─────────────────
+
+const GlobalParticles = () => {
+
+  const particles = Array.from({ length: 50 });
+
+  return (
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 1,
+      pointerEvents: "none",
+      overflow: "hidden"
+    }}>
+      {particles.map((_, i) => {
+
+        const size = Math.random() * 5 + 2;
+        const left = Math.random() * 100;
+        const duration = Math.random() * 20 + 20;
+        const delay = Math.random() * 10;
+
+        const colors = [
+          "rgba(0, 45, 119, 0.83)",   // blue
+          "rgba(183, 0, 92, 0.45)",  // pink
+          "rgba(49, 0, 95, 0.45)",  // purple
+        ];
+
+        const color = colors[i % colors.length];
+
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              bottom: -20,
+              left: `${left}%`,
+              width: size,
+              height: size,
+              borderRadius: "50%",
+              background: color,
+              boxShadow: `0 0 12px ${color}`,
+              animation: `floatGlobal ${duration}s linear infinite`,
+              animationDelay: `${delay}s`
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
 // ─── DASHBOARD PAGE ─────────────────────────────────────────
 
-const LandingPage = ({ setPage }) => {
+const LandingPage = ({ setPage = () => {} }) => {
 
   const container = {
   hidden: {},
@@ -2305,110 +2516,157 @@ const cardAnimation = {
   }
 };
 
+const ref = useRef(null);
+const isInView = useInView(ref, { once: true });
+
+
 return (
 
 <div className="animate-slide-up">
 
 
-{/* ───────── HERO SECTION ───────── */}
+{/* ───────── HERO SECTION (BALANCED + IMAGE) ───────── */}
 
-<div
+<motion.div
+initial={{ opacity: 0, y: 40 }}
+animate={{ opacity: 1, y: 0 }}
+transition={{ duration: 0.7 }}
 style={{
-borderRadius:20,
-padding:"48px 48px",
-marginBottom:32,
-background:`linear-gradient(135deg, ${C.navy} 0%, ${C.navy2} 100%)`,
-position:"relative",
-overflow:"hidden",
-display:"flex",
-alignItems:"center",
-justifyContent:"space-between",
-gap:40
+  borderRadius: 24,
+  padding: "56px",
+  marginBottom: 40,
+  background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navy2} 100%)`,
+  position: "relative",
+  overflow: "hidden",
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 40
 }}
 >
 
+{/* 🔵 GLOW BACKGROUND */}
+
+<div style={{
+  position:"absolute",
+  width:400,
+  height:400,
+  borderRadius:"50%",
+  background:"rgba(59,130,246,0.25)",
+  top:-120,
+  right:-120,
+  filter:"blur(80px)"
+}}/>
+
+<div style={{
+  position:"absolute",
+  width:300,
+  height:300,
+  borderRadius:"50%",
+  background:"rgba(34,197,94,0.2)",
+  bottom:-100,
+  left:-100,
+  filter:"blur(80px)"
+}}/>
+
 <FloatingBackground />
+<Particles />
 
+{/* ───────── LEFT CONTENT (VERTICAL CENTER FIXED) ───────── */}
 
-{/* HERO TEXT */}
+<div style={{
+  maxWidth:620,
+  zIndex:2,
+  display:"flex",
+  flexDirection:"column",
+  justifyContent:"center",   // ✅ vertical centering
+  minHeight:260               // ✅ ensures middle alignment
+}}>
 
-<div style={{ maxWidth:620 }}>
-
-<div
-style={{
+<div style={{
 fontSize:12,
 color:"rgba(255,255,255,0.5)",
 marginBottom:14,
 fontWeight:600,
-letterSpacing:"0.3px"
-}}
->
-ACADEMIC RESEARCH PLATFORM
+letterSpacing:"0.4px"
+}}>
+AI-POWERED ARCHITECTURE ANALYSIS
 </div>
 
-<h1
-style={{
-fontSize:44,
-fontWeight:800,
+<h1 style={{
+fontSize:46,
+fontWeight:900,
 color:"white",
-lineHeight:1.2,
-marginBottom:16
-}}
->
-UML Maintainability
-<br/>
+lineHeight:1.15,
+marginBottom:18
+}}>
+UML Maintainability <br/>
 
-<span
-style={{
+<span style={{
 background:"linear-gradient(135deg,#60a5fa,#22c55e)",
 WebkitBackgroundClip:"text",
 WebkitTextFillColor:"transparent"
-}}
->
+}}>
 Analysis Portal
 </span>
 
 </h1>
 
-<p
-style={{
-color:"rgba(255,255,255,0.7)",
+<p style={{
+color:"rgba(255,255,255,0.75)",
 fontSize:16,
 lineHeight:1.6,
-marginBottom:28
-}}
->
-Compare UML Architectures With Maintainability Metrics
-And Identify The Best Design Patterns Using Academic
-Analysis Techniques.
+marginBottom:30
+}}>
+Evaluate, compare, and optimize UML architectures using AI-driven
+maintainability metrics and pattern-based analysis.
 </p>
 
-<button
+<motion.button
 className="btn-primary"
+whileHover={{ scale:1.05 }}
+whileTap={{ scale:0.95 }}
 onClick={()=>setPage("analysis")}
-style={{ padding:"12px 24px" }}
+style={{
+padding:"14px 28px",
+fontSize:15,
+boxShadow:"0 10px 30px rgba(0,0,0,0.4)"
+}}
 >
-🔍 Start New Analysis
-</button>
+🚀 Start Analysis
+</motion.button>
 
 </div>
 
 
-{/* HERO IMAGE */}
+{/* ───────── RIGHT SIDE (IMAGE + STATS STACKED) ───────── */}
 
-<div
+<div style={{
+display:"flex",
+flexDirection:"column",
+gap:20,
+zIndex:2
+}}>
+
+{/* 🔥 IMAGE ON TOP RIGHT */}
+
+<motion.div
+initial={{ opacity:0, y:-20 }}
+animate={{ opacity:1, y:0 }}
+transition={{ duration:0.6 }}
 style={{
-width:420,
-height:260,
-borderRadius:14,
+width:260,
+height:160,
+borderRadius:16,
 overflow:"hidden",
-flexShrink:0
+boxShadow:"0 20px 40px rgba(0,0,0,0.4)"
 }}
 >
 
 <img
 src="src/assets/hero/HERO_IMAGE_SRC.jpg"
-alt="UML analysis illustration"
+alt="UML"
 style={{
 width:"100%",
 height:"100%",
@@ -2416,18 +2674,80 @@ objectFit:"cover"
 }}
 />
 
+</motion.div>
+
+
+{/* ───────── STATS BELOW IMAGE ───────── */}
+
+<motion.div
+initial={{ opacity:0, scale:0.9 }}
+animate={{ opacity:1, scale:1 }}
+transition={{ duration:0.6 }}
+style={{
+display:"grid",
+gridTemplateColumns:"repeat(2,1fr)",
+gap:14
+}}
+>
+
+{[
+  { label:"Metrics", value:"5+" },
+  { label:"Patterns", value:"5" },
+  { label:"Accuracy", value:"95%" },
+  { label:"Speed", value:"2s" }
+].map((item,i)=>(
+
+<motion.div
+key={i}
+whileHover={{
+  scale:1.05,
+  y:-4,
+  boxShadow:"0 20px 40px rgba(0,0,0,0.4)"
+}}
+style={{
+padding:16,
+borderRadius:14,
+background:"rgba(255,255,255,0.08)",
+backdropFilter:"blur(10px)",
+border:"1px solid rgba(255,255,255,0.1)",
+color:"#fff",
+textAlign:"center"
+}}
+>
+
+<div style={{
+fontSize:20,
+fontWeight:800,
+marginBottom:4
+}}>
+{item.value}
 </div>
 
+<div style={{
+fontSize:11,
+opacity:0.7
+}}>
+{item.label}
 </div>
+
+</motion.div>
+
+))}
+
+</motion.div>
+
+</div>
+
+</motion.div>
 
 
 
 {/* ───────── HOW IT WORKS ───────── */}
 
 <motion.div
+ref={ref}
 initial="hidden"
-whileInView="show"
-viewport={{ once:false, amount:0.2 }}
+animate={isInView ? "show" : "hidden"}
 variants={container}
 style={{ marginBottom:48 }}
 >
@@ -2901,21 +3221,55 @@ maintainable solution.
 
 
 
-{/* ───────── CTA SECTION ───────── */}
+{/* ───────── CTA SECTION (ANIMATED) ───────── */}
 
-<div
+<motion.div
+initial={{ opacity:0, y:60 }}
+whileInView={{ opacity:1, y:0 }}
+viewport={{ once:true }}
+transition={{ duration:0.7 }}
 style={{
-textAlign:"center",
-padding:"70px 30px",
+position:"relative",
+padding:"70px 40px",
 borderRadius:24,
-background:"linear-gradient(135deg,#0f172a,#1e3a8a)",
-maxWidth:950,
+maxWidth:1000,
 margin:"0 auto",
-color:"#fff"
+color:"#fff",
+overflow:"hidden",
+display:"flex",
+flexWrap:"nowrap",
+alignItems:"center",
+justifyContent:"space-between",
+gap:40,
+
+background: `
+  radial-gradient(circle at 20% 80%, rgba(34,197,94,0.15), transparent 40%),
+  radial-gradient(circle at 80% 20%, rgba(59,130,246,0.2), transparent 40%),
+  linear-gradient(135deg, #0b1220 0%, #1e3a8a 60%, #1e40af 100%)
+`
 }}
 >
 
-<h2
+{/* 🌌 PARTICLES */}
+<Particles />
+
+{/* ───────── LEFT TEXT ───────── */}
+
+<motion.div
+initial={{ opacity:0, x:-40 }}
+whileInView={{ opacity:1, x:0 }}
+transition={{ delay:0.2, duration:0.6 }}
+style={{
+maxWidth:520,
+zIndex:2,
+marginLeft:40   // 🔥 shifts text right
+}}
+>
+
+<motion.h2
+initial={{ opacity:0, y:20 }}
+whileInView={{ opacity:1, y:0 }}
+transition={{ delay:0.3 }}
 style={{
 fontSize:32,
 fontWeight:800,
@@ -2923,9 +3277,12 @@ marginBottom:14
 }}
 >
 Ready To Analyze Your UML Designs?
-</h2>
+</motion.h2>
 
-<p
+<motion.p
+initial={{ opacity:0, y:20 }}
+whileInView={{ opacity:1, y:0 }}
+transition={{ delay:0.4 }}
 style={{
 marginBottom:30,
 fontSize:17,
@@ -2934,17 +3291,70 @@ lineHeight:1.6
 }}
 >
 Start Your Maintainability Evaluation Now.
-</p>
+</motion.p>
 
-<button
+<motion.button
 className="btn-primary btn-cta"
+initial={{ opacity:0, scale:0.9 }}
+whileInView={{ opacity:1, scale:1 }}
+whileHover={{
+  scale:1.08,
+  boxShadow:"0 20px 50px rgba(0,0,0,0.5)"
+}}
+whileTap={{ scale:0.95 }}
+transition={{ delay:0.5 }}
 onClick={()=>setPage("analysis")}
 >
 🚀 Start Analysis
-</button>
+</motion.button>
 
-</div>
+</motion.div>
 
+
+{/* ───────── RIGHT IMAGE ───────── */}
+
+<motion.div
+initial={{ opacity:0, x:60 }}
+whileInView={{ opacity:1, x:0 }}
+transition={{ delay:0.3, duration:0.5 }}
+whileHover={{
+  scale:1.05,
+  rotateY:5,
+  rotateX:3
+}}
+style={{
+width:320,
+height:220,
+borderRadius:18,
+overflow:"hidden",
+flexShrink:0,
+position:"relative",
+boxShadow:"0 25px 50px rgba(0,0,0,0.5)",
+transform:"translateX(-20px)"
+}}
+>
+
+{/* glow overlay */}
+<div style={{
+position:"absolute",
+inset:0,
+background:"linear-gradient(135deg, rgba(59,130,246,0.25), rgba(34,197,94,0.2))",
+mixBlendMode:"overlay"
+}}/>
+
+<img
+src="src/assets/cta/uml_cta.jpg"
+alt="UML analysis"
+style={{
+width:"100%",
+height:"100%",
+objectFit:"cover"
+}}
+/>
+
+</motion.div>
+
+</motion.div>
 
 </div>
 
@@ -2966,6 +3376,7 @@ const [weights,setWeights] = useState(DEFAULT_WEIGHTS);
 const [showWeights,setShowWeights] = useState(false);
 const [errors,setErrors] = useState({});
 const [loading,setLoading] = useState(false);
+const [detectedPatterns, setDetectedPatterns] = useState([]);
 
 const counter = useRef(1);
 
@@ -2991,12 +3402,12 @@ const handleUpload = async (file) => {
 
     // 🔥 auto fill baseline metrics
     setBaselineScores({
-      coupling: data.coupling,
-      cohesion: data.cohesion,
-      modularity: data.modularity,
-      extensibility: data.extensibility,
-      complexity: data.complexity
-    });
+  coupling: data.metrics?.coupling || 0,
+  cohesion: data.metrics?.cohesion || 0,
+  modularity: data.metrics?.modularity || 0,
+  extensibility: data.metrics?.extensibility || 0,
+  complexity: data.metrics?.complexity || 0
+});
 
   }catch(err){
 
@@ -3007,9 +3418,7 @@ const handleUpload = async (file) => {
 };
 
 const analyzePattern = async (file, patternId) => {
-
   try {
-
     const formData = new FormData();
     formData.append("umlImage", file);
 
@@ -3023,30 +3432,36 @@ const analyzePattern = async (file, patternId) => {
 
     const data = await response.json();
 
-    console.log("Pattern AI Metrics:", data);
+    console.log("PATTERN RESULT:", data);
 
-    // update that specific pattern
     setPatterns(prev =>
       prev.map(p =>
         p.id === patternId
           ? {
               ...p,
+
+              // ✅ AUTO METRICS
               scores: {
-                coupling: data.coupling,
-                cohesion: data.cohesion,
-                modularity: data.modularity,
-                extensibility: data.extensibility,
-                complexity: data.complexity
-              }
+                coupling: data.metrics?.coupling || 0,
+                cohesion: data.metrics?.cohesion || 0,
+                modularity: data.metrics?.modularity || 0,
+                extensibility: data.metrics?.extensibility || 0,
+                complexity: data.metrics?.complexity || 0
+              },
+
+              // ✅ AUTO PATTERN NAME (ONLY HERE)
+              name:
+                data.patterns?.[0]?.pattern ||
+                data.patterns?.[0]?.name ||
+                ""
             }
           : p
       )
     );
 
   } catch (err) {
-    console.error("Pattern AI failed", err);
+    console.error("Pattern analysis failed", err);
   }
-
 };
 
 
@@ -3316,6 +3731,24 @@ error={errors[`bl_${k}`]}
 
 </Card>
 
+{detectedPatterns.length > 0 && (
+  <Card style={{ marginBottom: 24 }}>
+    <ST label="Detected Design Patterns" sub="AI detected patterns from UML" />
+
+    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+      {detectedPatterns.map((p, i) => (
+        <div
+          key={i}
+          className="badge badge-success"
+          style={{ padding: "6px 14px", fontSize: 13 }}
+        >
+          {p.pattern}
+        </div>
+      ))}
+    </div>
+  </Card>
+)}
+
 
 {/* ───── PATTERN DESIGNS ───── */}
 
@@ -3416,8 +3849,9 @@ onUpdate={(patch)=>{
 
   updatePattern(p.id, patch);
 
-  if(patch.file){
-     analyzePattern(patch.file, p.id); // 🔥 AI call
+  // ✅ FIX: ensure file exists properly
+  if (patch.file instanceof File) {
+    analyzePattern(patch.file, p.id);
   }
 
 }}
@@ -4359,18 +4793,22 @@ export default function App() {
 
   return (
     <>
+     <GlobalParticles />   {/* 🔥 ADD HERE */}
       <style dangerouslySetInnerHTML={{ __html: GLOBAL_CSS }}/>
       <Sidebar page={page} setPage={handleSetPage} collapsed={collapsed} setCollapsed={setCollapsed}/>
       <Topbar title={info.title} sub={info.sub} left={sw}/>
       <main style={{
-        marginLeft: sw,
-        paddingTop: 96,
-        paddingBottom: 48,
-        paddingLeft: 32,
-        paddingRight: 32,
-        transition:"margin-left 0.3s cubic-bezier(0.2, 0, 0, 1)",
-        minHeight:"100vh",
-      }}>
+  marginLeft: sw,
+  paddingTop: 96,
+  paddingBottom: 48,
+  paddingLeft: 32,
+  paddingRight: 32,
+  transition: "margin-left 0.3s cubic-bezier(0.2, 0, 0, 1)",
+  minHeight: "100vh",
+
+  position: "relative",   // ✅ ADD
+  zIndex: 2               // ✅ ADD
+}}>
         {page==="landing"    && <LandingPage    setPage={handleSetPage} projects={projects}/>}
         {page==="analysis"   && <NewAnalysisPage onGenerate={handleGenerate}/>}
         {page==="result"     && <ResultPage      data={analysisData} onClear={()=>{setAnalysisData(null);setPage("landing");}}/>}

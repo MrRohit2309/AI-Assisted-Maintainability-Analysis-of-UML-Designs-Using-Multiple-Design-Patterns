@@ -1,13 +1,79 @@
-export async function analyzeUMLDiagram(imagePath) {
+import axios from "axios";
+import fs from "fs";
+import FormData from "form-data";
 
-  // Fake AI analysis (random metrics)
-  const metrics = {
-    coupling: Math.floor(Math.random() * 5) + 3,
-    cohesion: Math.floor(Math.random() * 4) + 6,
-    modularity: Math.floor(Math.random() * 4) + 6,
-    extensibility: Math.floor(Math.random() * 4) + 6,
-    complexity: Math.floor(Math.random() * 5) + 3
-  };
+import { extractTextFromImage } from "./ocrService.js";
+import { buildGraph } from "./graphService.js";
+import { detectPatterns } from "./patternService.js";
 
-  return metrics;
+/**
+ * AI CALL (NO DELETE HERE ❗)
+ */
+export async function analyzeUMLDiagram(filePath) {
+  try {
+    const form = new FormData();
+
+    form.append("image", fs.createReadStream(filePath));
+
+    const response = await axios.post(
+      "http://127.0.0.1:5050/predict",
+      form,
+      {
+        headers: form.getHeaders(),
+      }
+    );
+
+    // ❌ REMOVE DELETE FROM HERE
+    // fs.unlinkSync(filePath);
+
+    return response.data;
+
+  } catch (error) {
+    console.error(
+      "AI Service Error:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * FULL PIPELINE
+ */
+export async function fullUMLAnalysis(filePath) {
+  try {
+    // 1️⃣ AI (file still exists)
+    const metrics = await analyzeUMLDiagram(filePath);
+
+    // 2️⃣ OCR (NOW WORKS ✅)
+    const text = await extractTextFromImage(filePath);
+
+    // 3️⃣ Graph
+    const graph = buildGraph(text);
+
+    // 4️⃣ Pattern Detection
+  const patterns = detectPatterns(text);
+
+    // ✅ DELETE ONLY AT END
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    return {
+      metrics,
+      patterns,
+      graph,
+      rawText: text,
+    };
+
+  } catch (error) {
+    console.error("Full Analysis Error:", error.message);
+
+    // safety cleanup
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    throw error;
+  }
 }

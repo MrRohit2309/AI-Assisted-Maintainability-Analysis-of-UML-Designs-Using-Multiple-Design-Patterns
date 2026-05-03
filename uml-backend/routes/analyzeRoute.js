@@ -1,6 +1,8 @@
 import express from "express";
 import multer from "multer";
-import { analyzeUMLDiagram } from "../services/aiService.js";
+import path from "path";
+
+import { fullUMLAnalysis } from "../services/aiService.js";
 
 const router = express.Router();
 
@@ -8,23 +10,26 @@ const upload = multer({ dest: "uploads/" });
 
 router.post("/analyze-uml", upload.single("umlImage"), async (req, res) => {
   try {
-
     if (!req.file) {
       return res.status(400).json({
-        error: "No UML image uploaded"
+        error: "No UML image uploaded",
       });
     }
 
-    const metrics = await analyzeUMLDiagram(req.file.path);
+    // ✅ FIX: absolute path
+    const absolutePath = path.resolve(req.file.path);
 
-    res.json(metrics);
+    console.log("Absolute Path:", absolutePath);
+
+    const result = await fullUMLAnalysis(absolutePath);
+
+    res.json(result);
 
   } catch (error) {
-
-    console.error(error);
+    console.error("Route Error:", error);
 
     res.status(500).json({
-      error: "AI analysis failed"
+      error: "AI analysis failed",
     });
   }
 });
